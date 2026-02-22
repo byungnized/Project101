@@ -13,24 +13,139 @@ service cloud.firestore {
       return request.resource.data.ownerUid == resource.data.ownerUid;
     }
 
+    function isShortString(value, maxLen) {
+      return value is string && value.size() > 0 && value.size() <= maxLen;
+    }
+
+    function isOptionalString(value, maxLen) {
+      return !(value is string) || value.size() <= maxLen;
+    }
+
+    function isIsoDateString(value) {
+      return value is string && value.size() >= 20 && value.size() <= 40;
+    }
+
+    function hasOnlyKeys(data, keys) {
+      return data.keys().hasOnly(keys);
+    }
+
+    function hasRequiredKeys(data, keys) {
+      return data.keys().hasAll(keys);
+    }
+
+    function isAllowedStatus(status) {
+      return status in ['UNWATCHED', 'WATCHED', 'REVIEW', 'REWATCHED'];
+    }
+
+    function isAllowedChannelSource(source) {
+      return source in ['MANUAL', 'YOUTUBE_SEARCH'];
+    }
+
+    function groupDocPath(groupId) {
+      return /databases/$(database)/documents/groups/$(groupId);
+    }
+
+    function groupExistsAndOwned(groupId) {
+      return groupId is string &&
+        exists(groupDocPath(groupId)) &&
+        get(groupDocPath(groupId)).data.ownerUid == request.auth.uid;
+    }
+
+    function validReviewTask(task) {
+      return task is map &&
+        hasRequiredKeys(task, ['kind', 'dueAt']) &&
+        hasOnlyKeys(task, ['kind', 'dueAt', 'completedAt']) &&
+        task.kind in ['D7', 'D30'] &&
+        isIsoDateString(task.dueAt) &&
+        (!task.keys().hasAny(['completedAt']) || isIsoDateString(task.completedAt));
+    }
+
+    function validReviewSchedule(listValue) {
+      return listValue is list &&
+        listValue.size() <= 2 &&
+        (listValue.size() == 0 ||
+          (listValue.size() == 1 && validReviewTask(listValue[0])) ||
+          (listValue.size() == 2 && validReviewTask(listValue[0]) && validReviewTask(listValue[1])));
+    }
+
+    function validGroupDoc(data) {
+      return hasRequiredKeys(data, ['ownerUid', 'name']) &&
+        hasOnlyKeys(data, ['ownerUid', 'name', 'description', 'color', 'createdAt', 'updatedAt']) &&
+        data.ownerUid == request.auth.uid &&
+        isShortString(data.name, 80) &&
+        (!data.keys().hasAny(['description']) || (data.description is string && data.description.size() <= 500)) &&
+        (!data.keys().hasAny(['color']) || (data.color is string && data.color.matches('^#[0-9A-Fa-f]{6}$'))) &&
+        (!data.keys().hasAny(['createdAt']) || data.createdAt is timestamp) &&
+        (!data.keys().hasAny(['updatedAt']) || data.updatedAt is timestamp);
+    }
+
+    function validGroupChannelDoc(data) {
+      return hasRequiredKeys(data, ['ownerUid', 'groupId', 'channelId', 'title', 'source']) &&
+        hasOnlyKeys(data, [
+          'ownerUid', 'groupId', 'channelId', 'title', 'thumbnailUrl', 'source', 'createdAt'
+        ]) &&
+        data.ownerUid == request.auth.uid &&
+        isShortString(data.groupId, 200) &&
+        isShortString(data.channelId, 64) &&
+        isShortString(data.title, 200) &&
+        isAllowedChannelSource(data.source) &&
+        (!data.keys().hasAny(['thumbnailUrl']) || (data.thumbnailUrl is string && data.thumbnailUrl.size() <= 1000)) &&
+        (!data.keys().hasAny(['createdAt']) || data.createdAt is timestamp) &&
+        groupExistsAndOwned(data.groupId);
+    }
+
+    function validVideoItemDoc(data) {
+      return hasRequiredKeys(data, [
+          'ownerUid', 'groupId', 'channelId', 'youtubeVideoId', 'title', 'status', 'reviewSchedule'
+        ]) &&
+        hasOnlyKeys(data, [
+          'ownerUid', 'groupId', 'channelId', 'youtubeVideoId', 'title', 'thumbnailUrl',
+          'publishedAt', 'status', 'watchedAt', 'reviewSchedule', 'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerUid == request.auth.uid &&
+        isShortString(data.groupId, 200) &&
+        isShortString(data.channelId, 64) &&
+        isShortString(data.youtubeVideoId, 32) &&
+        isShortString(data.title, 300) &&
+        isAllowedStatus(data.status) &&
+        validReviewSchedule(data.reviewSchedule) &&
+        (!data.keys().hasAny(['thumbnailUrl']) || (data.thumbnailUrl is string && data.thumbnailUrl.size() <= 1000)) &&
+        (!data.keys().hasAny(['publishedAt']) || isIsoDateString(data.publishedAt)) &&
+        (!data.keys().hasAny(['watchedAt']) || isIsoDateString(data.watchedAt)) &&
+        (!data.keys().hasAny(['createdAt']) || data.createdAt is timestamp) &&
+        (!data.keys().hasAny(['updatedAt']) || data.updatedAt is timestamp) &&
+        groupExistsAndOwned(data.groupId);
+    }
+
     match /groups/{groupId} {
-      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow create: if isSignedIn() && validGroupDoc(request.resource.data);
       allow read: if isOwner(resource.data);
-      allow update: if isOwner(resource.data) && ownerUidUnchanged();
+      allow update: if isOwner(resource.data) &&
+        ownerUidUnchanged() &&
+        validGroupDoc(request.resource.data);
       allow delete: if isOwner(resource.data);
     }
 
     match /groupChannels/{channelDocId} {
-      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow create: if isSignedIn() && validGroupChannelDoc(request.resource.data);
       allow read: if isOwner(resource.data);
-      allow update: if isOwner(resource.data) && ownerUidUnchanged();
+      allow update: if isOwner(resource.data) &&
+        ownerUidUnchanged() &&
+        request.resource.data.groupId == resource.data.groupId &&
+        request.resource.data.channelId == resource.data.channelId &&
+        validGroupChannelDoc(request.resource.data);
       allow delete: if isOwner(resource.data);
     }
 
     match /videoItems/{videoDocId} {
-      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow create: if isSignedIn() && validVideoItemDoc(request.resource.data);
       allow read: if isOwner(resource.data);
-      allow update: if isOwner(resource.data) && ownerUidUnchanged();
+      allow update: if isOwner(resource.data) &&
+        ownerUidUnchanged() &&
+        request.resource.data.groupId == resource.data.groupId &&
+        request.resource.data.channelId == resource.data.channelId &&
+        request.resource.data.youtubeVideoId == resource.data.youtubeVideoId &&
+        validVideoItemDoc(request.resource.data);
       allow delete: if isOwner(resource.data);
     }
 
@@ -40,7 +155,14 @@ service cloud.firestore {
     }
 
     match /deletionRequests/{docId} {
-      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow create: if isSignedIn() &&
+        request.resource.data.ownerUid == request.auth.uid &&
+        hasRequiredKeys(request.resource.data, ['ownerUid', 'requestedAt', 'source']) &&
+        hasOnlyKeys(request.resource.data, ['ownerUid', 'requestedAt', 'source', 'status']) &&
+        request.resource.data.ownerUid is string &&
+        request.resource.data.requestedAt is timestamp &&
+        request.resource.data.source in ['settings_screen', 'callable_function'] &&
+        (!request.resource.data.keys().hasAny(['status']) || request.resource.data.status is string);
       allow read: if isSignedIn() && resource.data.ownerUid == request.auth.uid;
       allow update, delete: if false;
     }
