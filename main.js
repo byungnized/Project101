@@ -20,12 +20,7 @@ class LottoDisplay extends HTMLElement {
           opacity: 0;
           transform: scale(0.5);
         }
-
         .ball-yellow { background-color: #f7d64f; }
-        .ball-blue { background-color: #5aa6ff; color: #0b1b36; }
-        .ball-red { background-color: #ff6b6b; color: #3b0b0b; }
-        .ball-gray { background-color: #bfbfbf; color: #1f1f1f; }
-        .ball-green { background-color: #71d28b; color: #0b2a16; }
 
         @keyframes reveal {
           from {
@@ -50,19 +45,14 @@ class LottoDisplay extends HTMLElement {
 
     [...numbers].sort((a, b) => a - b).forEach((number, index) => {
       const lottoNumber = document.createElement('div');
-      lottoNumber.classList.add('lotto-number', this.getBallClass(number));
+      lottoNumber.classList.add('lotto-number');
+      if (index === 5) {
+        lottoNumber.classList.add('ball-yellow');
+      }
       lottoNumber.textContent = number;
       lottoNumber.style.animationDelay = `${index * 0.1}s`;
       this.shadowRoot.appendChild(lottoNumber);
     });
-  }
-
-  getBallClass(number) {
-    if (number <= 10) return 'ball-yellow';
-    if (number <= 20) return 'ball-blue';
-    if (number <= 30) return 'ball-red';
-    if (number <= 40) return 'ball-gray';
-    return 'ball-green';
   }
 }
 
