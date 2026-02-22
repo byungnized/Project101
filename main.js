@@ -14,8 +14,8 @@ class LottoDisplay extends HTMLElement {
           align-items: center;
           font-size: 1.5rem;
           font-weight: bold;
-          color: #111111;
-          border: 2px solid rgba(0, 0, 0, 0.08);
+          color: var(--ball-text-color);
+          border: 2px solid var(--ball-border-color);
           animation: reveal 0.5s ease-in-out forwards;
           opacity: 0;
           transform: scale(0.5);
