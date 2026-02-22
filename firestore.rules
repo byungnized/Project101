@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(data) {
+      return isSignedIn() && data.ownerUid == request.auth.uid;
+    }
+
+    function ownerUidUnchanged() {
+      return request.resource.data.ownerUid == resource.data.ownerUid;
+    }
+
+    match /groups/{groupId} {
+      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow read: if isOwner(resource.data);
+      allow update: if isOwner(resource.data) && ownerUidUnchanged();
+      allow delete: if isOwner(resource.data);
+    }
+
+    match /groupChannels/{channelDocId} {
+      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow read: if isOwner(resource.data);
+      allow update: if isOwner(resource.data) && ownerUidUnchanged();
+      allow delete: if isOwner(resource.data);
+    }
+
+    match /videoItems/{videoDocId} {
+      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow read: if isOwner(resource.data);
+      allow update: if isOwner(resource.data) && ownerUidUnchanged();
+      allow delete: if isOwner(resource.data);
+    }
+
+    match /reviewQueue/{docId} {
+      allow read: if isOwner(resource.data);
+      allow create, update, delete: if false;
+    }
+
+    match /deletionRequests/{docId} {
+      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow read: if isSignedIn() && resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if false;
+    }
+  }
+}

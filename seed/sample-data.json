@@ -1,0 +1,76 @@
+{
+  "groups": [
+    {
+      "id": "stock-study",
+      "ownerUid": "demo-user",
+      "name": "Stock Study",
+      "description": "Earnings analysis, valuation, macro updates",
+      "color": "#0f6d5d"
+    },
+    {
+      "id": "frontend-research",
+      "ownerUid": "demo-user",
+      "name": "Frontend Research",
+      "description": "Framework releases and architecture talks",
+      "color": "#d87a2f"
+    }
+  ],
+  "groupChannels": [
+    {
+      "id": "ch1",
+      "ownerUid": "demo-user",
+      "groupId": "stock-study",
+      "channelId": "UC123ExampleStocks",
+      "title": "Value Investing Lab",
+      "source": "MANUAL"
+    },
+    {
+      "id": "ch2",
+      "ownerUid": "demo-user",
+      "groupId": "frontend-research",
+      "channelId": "UC456ExampleFrontend",
+      "title": "Web Platform Weekly",
+      "source": "YOUTUBE_SEARCH"
+    }
+  ],
+  "videoItems": [
+    {
+      "id": "vid1",
+      "ownerUid": "demo-user",
+      "groupId": "stock-study",
+      "channelId": "UC123ExampleStocks",
+      "youtubeVideoId": "abc123demo",
+      "title": "DCF Walkthrough for Semiconductor Stocks",
+      "status": "UNWATCHED",
+      "reviewSchedule": []
+    },
+    {
+      "id": "vid2",
+      "ownerUid": "demo-user",
+      "groupId": "stock-study",
+      "channelId": "UC123ExampleStocks",
+      "youtubeVideoId": "def456demo",
+      "title": "Quarterly Earnings Checklist",
+      "status": "WATCHED",
+      "watchedAt": "2026-02-10T10:00:00.000Z",
+      "reviewSchedule": [
+        { "kind": "D7", "dueAt": "2026-02-17T10:00:00.000Z", "completedAt": "2026-02-17T11:00:00.000Z" },
+        { "kind": "D30", "dueAt": "2026-03-12T10:00:00.000Z" }
+      ]
+    },
+    {
+      "id": "vid3",
+      "ownerUid": "demo-user",
+      "groupId": "frontend-research",
+      "channelId": "UC456ExampleFrontend",
+      "youtubeVideoId": "ghi789demo",
+      "title": "React Compiler Deep Dive",
+      "status": "REVIEW",
+      "watchedAt": "2026-02-14T15:30:00.000Z",
+      "reviewSchedule": [
+        { "kind": "D7", "dueAt": "2026-02-21T15:30:00.000Z" },
+        { "kind": "D30", "dueAt": "2026-03-16T15:30:00.000Z" }
+      ]
+    }
+  ]
+}
