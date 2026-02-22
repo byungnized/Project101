@@ -55,10 +55,34 @@ customElements.define('lotto-display', LottoDisplay);
 document.addEventListener('DOMContentLoaded', () => {
   const lottoDisplay = document.querySelector('lotto-display');
   const generateBtn = document.getElementById('generate-btn');
+  const themeToggle = document.getElementById('theme-toggle');
+
+  const applyTheme = (theme) => {
+    document.documentElement.setAttribute('data-theme', theme);
+    const isDark = theme === 'dark';
+    themeToggle.textContent = isDark ? 'Light mode' : 'Dark mode';
+    themeToggle.setAttribute('aria-pressed', String(isDark));
+  };
+
+  const getPreferredTheme = () => {
+    const stored = localStorage.getItem('theme');
+    if (stored === 'light' || stored === 'dark') {
+      return stored;
+    }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  };
 
   generateBtn.addEventListener('click', () => {
     lottoDisplay.generateNumbers();
   });
 
+  themeToggle.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', next);
+    applyTheme(next);
+  });
+
+  applyTheme(getPreferredTheme());
   lottoDisplay.generateNumbers(); // Initial generation
 });
