@@ -14,6 +14,22 @@
         </div>
         <lotto-display></lotto-display>
         <button id="generate-btn">Generate Numbers</button>
+        <form class="partner-form" action="https://formspree.io/f/xpqjyyll" method="POST">
+            <h2>Partnership Inquiry</h2>
+            <label>
+                Name
+                <input type="text" name="name" required>
+            </label>
+            <label>
+                Email
+                <input type="email" name="email" required>
+            </label>
+            <label>
+                Message
+                <textarea name="message" rows="4" required></textarea>
+            </label>
+            <button type="submit" class="submit-btn">Send</button>
+        </form>
     </div>
     <script src="main.js"></script>
 </body>
